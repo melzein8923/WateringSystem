@@ -1,7 +1,6 @@
 #ifndef SYSTEM_STATE_H
 #define SYSTEM_STATE_H
 #include "plant.h"
-#define MAX_PLANTS 8
 
 typedef enum{
 	STATE_INIT,
