@@ -4,9 +4,9 @@
 typedef struct{
 	int id;
 	float moisturePercent;
-	int needsWater;
 	int sensorFault;
-	int lastWatered;
 } Plant;
+
+int isPlantDry(const Plant* plant);
 
 #endif
