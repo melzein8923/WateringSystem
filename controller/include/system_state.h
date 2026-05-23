@@ -1,6 +1,9 @@
 #ifndef SYSTEM_STATE_H
 #define SYSTEM_STATE_H
+
+#include "config.h"
 #include "plant.h"
+#include "environment.h"
 
 typedef enum{
 	STATE_INIT,
@@ -14,6 +17,7 @@ typedef struct{
 	int activePlants;
 	SystemMode mode;
 	int pumpActive;
+	EnvironmentData environment;
 } SystemState;
 
 #endif

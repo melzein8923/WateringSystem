@@ -2,11 +2,11 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "systemState.h"
-#include "system_init.h"
-#include "sensor_sim.h"
-#include "display.h"
-#include "config.h"
+#include "../include/system_state.h"
+#include "../include/system_init.h"
+#include "../include/sensor_sim.h"
+#include "../include/display.h"
+#include "../include/config.h"
 
 int main(){
     srand(time(NULL));

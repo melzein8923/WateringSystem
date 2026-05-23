@@ -1,6 +1,7 @@
 #include <stdio.h>
 
-#include "display.h"
+#include "../include/display.h"
+#include "../include/system_state.h"
 
 void display_system_status(SystemState* system)
 {
@@ -9,28 +10,28 @@ void display_system_status(SystemState* system)
     printf("System Mode: %d\n", system->mode);
 
     printf("Pump: %s\n",
-           system->pump_active ? "ON" : "OFF");
+           system->pumpActive ? "ON" : "OFF");
 
     printf("\nPlants:\n");
 
-    for (int i = 0; i < system->active_plant_count; i++)
+    for (int i = 0; i < system->activePlants; i++)
     {
         Plant* plant = &system->plants[i];
 
         printf(
             "Plant %d: %.1f%% moisture\n",
             plant->id,
-            plant->moisture_percent
+            plant->moisturePercent
         );
     }
 
     printf("\nEnvironment:\n");
 
     printf("Temperature: %.1f C\n",
-           system->environment.temperature_c);
+           system->environment.tempC);
 
     printf("Humidity: %.1f%%\n",
-           system->environment.humidity_percent);
+           system->environment.humidityPercent);
 
     printf("====================\n");
 }
