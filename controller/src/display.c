@@ -7,7 +7,17 @@ void display_system_status(SystemState* system)
 {
     printf("\n====================\n");
 
-    printf("System Mode: %d\n", system->mode);
+    const char* modeLabel = "MONITORING";
+    if (system->mode == STATE_WATERING) {
+        modeLabel = "WATERING";
+    } else if (system->mode == STATE_COOLDOWN) {
+        modeLabel = "COOLDOWN";
+    } else if (system->mode == STATE_FAULT) {
+        modeLabel = "FAULT";
+    } else if (system->mode == STATE_INIT) {
+        modeLabel = "INIT";
+    }
+    printf("System Mode: %s\n", modeLabel);
 
     printf("Pump: %s\n",
            system->pumpActive ? "ON" : "OFF");
@@ -18,11 +28,16 @@ void display_system_status(SystemState* system)
     {
         Plant* plant = &system->plants[i];
 
-        printf(
-            "Plant %d: %.1f%% moisture\n",
-            plant->id,
-            plant->moisturePercent
-        );
+        if (plant->sensorFault) {
+            printf("Plant %d: SENSOR FAULT\n", plant->id);
+        } else {
+            printf(
+                "Plant %d: %.1f%% moisture%s\n",
+                plant->id,
+                plant->moisturePercent,
+                plant->needsWater ? " (dry)" : ""
+            );
+        }
     }
 
     printf("\nEnvironment:\n");

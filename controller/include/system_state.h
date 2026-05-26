@@ -9,6 +9,7 @@ typedef enum{
 	STATE_INIT,
 	STATE_MONITORING,
 	STATE_WATERING,
+	STATE_COOLDOWN,
 	STATE_FAULT
 } SystemMode;
 
@@ -17,6 +18,8 @@ typedef struct{
 	int activePlants;
 	SystemMode mode;
 	int pumpActive;
+	int pumpSecondsRemaining;
+	int cooldownSecondsRemaining;
 	EnvironmentData environment;
 } SystemState;
 

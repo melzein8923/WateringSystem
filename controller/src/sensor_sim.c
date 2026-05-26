@@ -3,25 +3,20 @@
 
 #include "../include/sensor_sim.h"
 #include "../include/system_state.h"
+#include "../include/plant.h"
 
 void simulate_sensor_readings(SystemState* system)
 {
     for (int i = 0; i < system->activePlants; i++)
     {
         Plant* plant = &system->plants[i];
-        plant->moisturePercent -= 0.6f;
+        float reading = plant->moisturePercent - 1.4f;
 
-        if (plant->moisturePercent < 0){
-            plant->moisturePercent = 0;
+        if (system->pumpActive) {
+            reading += 5.0f;
         }
 
-        if (system->pumpActive){
-            plant->moisturePercent += 5.0f;
-        }
-
-        if (plant->moisturePercent > 100){
-            plant->moisturePercent = 100;
-        }
+        plantUpdateMoisture(plant, reading);
     }
     system->environment.tempC = 18 + rand() % 15;
     system->environment.humidityPercent = 30 + rand() % 41;

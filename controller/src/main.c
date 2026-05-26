@@ -6,6 +6,7 @@
 #include "../include/system_init.h"
 #include "../include/sensor_sim.h"
 #include "../include/display.h"
+#include "../include/irrigation.h"
 #include "../include/config.h"
 
 int main(){
@@ -15,6 +16,7 @@ int main(){
     while (1)
     {
         simulate_sensor_readings(&system);
+        evaluate_irrigation(&system);
         display_system_status(&system);
         sleep(LOOP_DELAY_SEC);
     }

@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -Iinclude
+CFLAGS = -Wall -Wextra -Iinclude -lm
 SRC = $(wildcard src/*.c)
 TARGET = irrigation_controller
 all:
