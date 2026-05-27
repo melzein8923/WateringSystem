@@ -175,25 +175,18 @@ int bme280_read_calibration(void)
 {
     unsigned char data[32];
 
-    if (bme280_read_bytes(0x88, data, 6) != 0) {
-        fprintf(stderr, "bme280: failed to read temperature calibration\n");
-        return -1;
-    }
+    // Temperature calibration
+    bme280_read_bytes(0x88, data, 6);
 
     calib.dig_T1 = (data[1] << 8) | data[0];
     calib.dig_T2 = (data[3] << 8) | data[2];
     calib.dig_T3 = (data[5] << 8) | data[4];
 
-    if (bme280_read_register(0xA1, &data[0]) != 0) {
-        fprintf(stderr, "bme280: failed to read humidity calibration (H1)\n");
-        return -1;
-    }
+    // Humidity calibration
+    bme280_read_register(0xA1, &data[0]);
     calib.dig_H1 = data[0];
 
-    if (bme280_read_bytes(0xE1, data, 7) != 0) {
-        fprintf(stderr, "bme280: failed to read humidity calibration (H2-H6)\n");
-        return -1;
-    }
+    bme280_read_bytes(0xE1, data, 7);
 
     calib.dig_H2 = (data[1] << 8) | data[0];
     calib.dig_H3 = data[2];
@@ -222,7 +215,44 @@ int bme280_init(void)
         return -1;
     }
 
+    if (bme280_write_register(BME280_CTRL_HUM_REG, 0x01) != 0) {
+        fprintf(stderr, "bme280: failed to configure humidity oversampling\n");
+        return -1;
+    }
+
+    if (bme280_write_register(BME280_CONFIG_REG, 0x00) != 0) {
+        fprintf(stderr, "bme280: failed to configure standby/filter\n");
+        return -1;
+    }
+
+    if (bme280_write_register(BME280_CTRL_MEAS_REG, 0x00) != 0) {
+        fprintf(stderr, "bme280: failed to set sleep mode\n");
+        return -1;
+    }
+
     return 0;
+}
+
+static int bme280_trigger_measurement(void)
+{
+    uint8_t status = 0;
+
+    if (bme280_write_register(BME280_CTRL_MEAS_REG, BME280_FORCED_MEASURE) != 0) {
+        return -1;
+    }
+
+    for (int i = 0; i < 100; i++) {
+        if (bme280_read_register(BME280_REG_STATUS, &status) != 0) {
+            return -1;
+        }
+        if ((status & 0x08) == 0) {
+            return 0;
+        }
+        usleep(1000);
+    }
+
+    fprintf(stderr, "bme280: measurement timed out\n");
+    return -1;
 }
 
 float bme280_compensate_temperature(int adc_T)
@@ -283,7 +313,7 @@ void bme280_read_environment(float *temperature, float *humidity)
         return;
     }
 
-    if (bme280_read_bytes(0xF7, data, 8) != 0) {
+    if (bme280_read_bytes(BME280_PRESS_MSB, data, 8) != 0) {
         return;
     }
 
@@ -298,6 +328,25 @@ void bme280_read_environment(float *temperature, float *humidity)
 
     *temperature = bme280_compensate_temperature(raw_temp);
     *humidity = bme280_compensate_humidity(raw_hum);
+}
+
+int bme280_update_environment(EnvironmentData *env)
+{
+    float temperature = 0.0f;
+    float humidity = 0.0f;
+
+    if (env == NULL || !bme.connected) {
+        return -1;
+    }
+
+    if (bme280_trigger_measurement() != 0) {
+        return -1;
+    }
+
+    bme280_read_environment(&temperature, &humidity);
+    env->tempC = temperature;
+    env->humidityPercent = humidity;
+    return 0;
 }
 void test_raw_read(void)
 {
@@ -392,6 +441,12 @@ void bme280_read_environment(float *temperature, float *humidity)
     if (humidity != NULL) {
         *humidity = 0.0f;
     }
+}
+
+int bme280_update_environment(EnvironmentData *env)
+{
+    (void)env;
+    return -1;
 }
 
 void test_raw_read(void)

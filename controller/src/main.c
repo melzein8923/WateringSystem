@@ -21,12 +21,8 @@ int main(){
     {
         simulate_sensor_readings(&system);
 
-        if (bme280_ok && bme280_is_connected()) {
-            float temperature = 0.0f;
-            float humidity = 0.0f;
-            bme280_read_environment(&temperature, &humidity);
-            system.environment.tempC = temperature;
-            system.environment.humidityPercent = humidity;
+        if (bme280_ok) {
+            bme280_update_environment(&system.environment);
         }
 
         evaluate_irrigation(&system);

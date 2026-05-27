@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#include "../include/environment.h"
+
 #define BME280_I2C_BUS "/dev/i2c-1"
 #define BME280_I2C_ADDRESS 0x76
 #define BME280_REG_CHIP_ID 0xD0
@@ -12,9 +14,11 @@
 #define BME280_CTRL_MEAS_REG  0xF4
 #define BME280_CONFIG_REG     0xF5
 
-#define BME280_TEMP_MSB  0xFA
-#define BME280_PRESS_MSB 0xF7
-#define BME280_HUM_MSB   0xFD
+#define BME280_REG_STATUS     0xF3
+#define BME280_TEMP_MSB       0xFA
+#define BME280_PRESS_MSB      0xF7
+#define BME280_HUM_MSB        0xFD
+#define BME280_FORCED_MEASURE 0x25
 
 
 typedef struct
@@ -47,7 +51,10 @@ int bme280_read_bytes(unsigned char reg, unsigned char *buf, int len);
 int bme280_read_calibration(void);
 float bme280_compensate_temperature(int adc_T);
 float bme280_compensate_humidity(int adc_H);
-void bme280_read_environment(float *temperature,float *humidity);
+void bme280_read_environment(float *temperature, float *humidity);
+
+/* Trigger a new sample and write temp/humidity into env. Call each loop. */
+int bme280_update_environment(EnvironmentData *env);
 
 void test_raw_read(void);
 #endif
