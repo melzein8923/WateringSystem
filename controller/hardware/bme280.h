@@ -23,16 +23,29 @@
 
 typedef struct
 {
+    // temp
     unsigned short dig_T1;
     short dig_T2;
     short dig_T3;
 
+    // humidity
     unsigned short dig_H1;
     short dig_H2;
     unsigned char dig_H3;
     short dig_H4;
     short dig_H5;
     signed char dig_H6;
+
+    // pressure
+    unsigned short dig_P1;
+    short dig_P2;
+    short dig_P3;
+    short dig_P4;
+    short dig_P5;
+    short dig_P6;
+    short dig_P7;
+    short dig_P8;
+    short dig_P9;
 } BME280_CalibData;
 
 int bme280_init(void);
@@ -51,7 +64,8 @@ int bme280_read_bytes(unsigned char reg, unsigned char *buf, int len);
 int bme280_read_calibration(void);
 float bme280_compensate_temperature(int adc_T);
 float bme280_compensate_humidity(int adc_H);
-void bme280_read_environment(float *temperature, float *humidity);
+float bme280_compensate_pressure(int adc_P);
+void bme280_read_environment(float *temperature, float *humidity, float *pressure_hpa);
 
 /* Trigger a new sample and write temp/humidity into env. Call each loop. */
 int bme280_update_environment(EnvironmentData *env);

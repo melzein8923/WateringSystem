@@ -173,33 +173,45 @@ int bme280_read_bytes(unsigned char reg, unsigned char *buf, int len)
 
 int bme280_read_calibration(void)
 {
-    unsigned char data[32];
+    unsigned char data[24];
+    unsigned char hum_data[7];
+    uint8_t h1 = 0;
 
-    // Temperature calibration
-    bme280_read_bytes(0x88, data, 6);
+    if (bme280_read_bytes(0x88, data, 24) != 0) {
+        fprintf(stderr, "bme280: failed to read T/P calibration\n");
+        return -1;
+    }
 
     calib.dig_T1 = (data[1] << 8) | data[0];
     calib.dig_T2 = (data[3] << 8) | data[2];
     calib.dig_T3 = (data[5] << 8) | data[4];
 
-    // Humidity calibration
-    bme280_read_register(0xA1, &data[0]);
-    calib.dig_H1 = data[0];
+    calib.dig_P1 = (data[7] << 8) | data[6];
+    calib.dig_P2 = (data[9] << 8) | data[8];
+    calib.dig_P3 = (data[11] << 8) | data[10];
+    calib.dig_P4 = (data[13] << 8) | data[12];
+    calib.dig_P5 = (data[15] << 8) | data[14];
+    calib.dig_P6 = (data[17] << 8) | data[16];
+    calib.dig_P7 = (data[19] << 8) | data[18];
+    calib.dig_P8 = (data[21] << 8) | data[20];
+    calib.dig_P9 = (data[23] << 8) | data[22];
 
-    bme280_read_bytes(0xE1, data, 7);
+    if (bme280_read_register(0xA1, &h1) != 0) {
+        fprintf(stderr, "bme280: failed to read humidity calibration (H1)\n");
+        return -1;
+    }
+    calib.dig_H1 = h1;
 
-    calib.dig_H2 = (data[1] << 8) | data[0];
-    calib.dig_H3 = data[2];
+    if (bme280_read_bytes(0xE1, hum_data, 7) != 0) {
+        fprintf(stderr, "bme280: failed to read humidity calibration (H2-H6)\n");
+        return -1;
+    }
 
-    calib.dig_H4 =
-        (data[3] << 4) |
-        (data[4] & 0x0F);
-
-    calib.dig_H5 =
-        (data[5] << 4) |
-        (data[4] >> 4);
-
-    calib.dig_H6 = (signed char)data[6];
+    calib.dig_H2 = (hum_data[1] << 8) | hum_data[0];
+    calib.dig_H3 = hum_data[2];
+    calib.dig_H4 = (hum_data[3] << 4) | (hum_data[4] & 0x0F);
+    calib.dig_H5 = (hum_data[5] << 4) | (hum_data[4] >> 4);
+    calib.dig_H6 = (signed char)hum_data[6];
 
     printf("bme280: calibration loaded\n");
     return 0;
@@ -305,17 +317,72 @@ float bme280_compensate_humidity(int adc_H)
     return h;
 }
 
-void bme280_read_environment(float *temperature, float *humidity)
+float bme280_compensate_pressure(int adc_P)
+{
+    double var1, var2, p;
+
+    var1 = ((double)t_fine / 2.0) - 64000.0;
+
+    var2 = var1 * var1 *
+           ((double)calib.dig_P6) / 32768.0;
+
+    var2 = var2 +
+           var1 * ((double)calib.dig_P5) * 2.0;
+
+    var2 = (var2 / 4.0) +
+           (((double)calib.dig_P4) * 65536.0);
+
+    var1 =
+        (((double)calib.dig_P3) *
+        var1 * var1 / 524288.0 +
+        ((double)calib.dig_P2) *
+        var1) / 524288.0;
+
+    var1 =
+        (1.0 + var1 / 32768.0) *
+        ((double)calib.dig_P1);
+
+    if (var1 == 0.0)
+    {
+        return 0;
+    }
+
+    p = 1048576.0 - (double)adc_P;
+
+    p = (p - (var2 / 4096.0)) *
+        6250.0 / var1;
+
+    var1 =
+        ((double)calib.dig_P9) *
+        p * p / 2147483648.0;
+
+    var2 =
+        p * ((double)calib.dig_P8) /
+        32768.0;
+
+    p = p +
+        (var1 + var2 +
+        ((double)calib.dig_P7)) / 16.0;
+
+    return p / 100.0f;
+}
+
+void bme280_read_environment(float *temperature, float *humidity, float *pressure_hpa)
 {
     unsigned char data[8];
 
-    if (temperature == NULL || humidity == NULL) {
+    if (temperature == NULL || humidity == NULL || pressure_hpa == NULL) {
         return;
     }
 
     if (bme280_read_bytes(BME280_PRESS_MSB, data, 8) != 0) {
         return;
     }
+
+    int raw_press =
+        (data[0] << 12) |
+        (data[1] << 4) |
+        (data[2] >> 4);
 
     int raw_temp =
         (data[3] << 12) |
@@ -327,6 +394,7 @@ void bme280_read_environment(float *temperature, float *humidity)
         data[7];
 
     *temperature = bme280_compensate_temperature(raw_temp);
+    *pressure_hpa = bme280_compensate_pressure(raw_press);
     *humidity = bme280_compensate_humidity(raw_hum);
 }
 
@@ -334,6 +402,7 @@ int bme280_update_environment(EnvironmentData *env)
 {
     float temperature = 0.0f;
     float humidity = 0.0f;
+    float pressure_hpa = 0.0f;
 
     if (env == NULL || !bme.connected) {
         return -1;
@@ -343,9 +412,10 @@ int bme280_update_environment(EnvironmentData *env)
         return -1;
     }
 
-    bme280_read_environment(&temperature, &humidity);
+    bme280_read_environment(&temperature, &humidity, &pressure_hpa);
     env->tempC = temperature;
     env->humidityPercent = humidity;
+    env->pressurehpa = pressure_hpa;
     return 0;
 }
 void test_raw_read(void)
@@ -433,7 +503,13 @@ float bme280_compensate_humidity(int adc_H)
     return 0.0f;
 }
 
-void bme280_read_environment(float *temperature, float *humidity)
+float bme280_compensate_pressure(int adc_P)
+{
+    (void)adc_P;
+    return 0.0f;
+}
+
+void bme280_read_environment(float *temperature, float *humidity, float *pressure_hpa)
 {
     if (temperature != NULL) {
         *temperature = 0.0f;
@@ -441,11 +517,18 @@ void bme280_read_environment(float *temperature, float *humidity)
     if (humidity != NULL) {
         *humidity = 0.0f;
     }
+    if (pressure_hpa != NULL) {
+        *pressure_hpa = 0.0f;
+    }
 }
 
 int bme280_update_environment(EnvironmentData *env)
 {
-    (void)env;
+    if (env != NULL) {
+        env->tempC = 0.0f;
+        env->humidityPercent = 0.0f;
+        env->pressurehpa = 0.0f;
+    }
     return -1;
 }
 

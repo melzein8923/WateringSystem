@@ -48,5 +48,8 @@ void display_system_status(SystemState* system)
     printf("Humidity: %.1f%%\n",
            system->environment.humidityPercent);
 
+    printf("Pressure: %.1f hPa\n",
+           system->environment.pressurehpa);
+
     printf("====================\n");
 }

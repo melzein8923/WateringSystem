@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
@@ -23,6 +24,12 @@ int main(){
 
         if (bme280_ok) {
             bme280_update_environment(&system.environment);
+            printf(
+                "BME280: %.1f C, %.1f%%, %.1f hPa\n",
+                system.environment.tempC,
+                system.environment.humidityPercent,
+                system.environment.pressurehpa
+            );
         }
 
         evaluate_irrigation(&system);
