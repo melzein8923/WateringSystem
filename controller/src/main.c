@@ -8,11 +8,17 @@
 #include "../include/display.h"
 #include "../include/irrigation.h"
 #include "../include/config.h"
+#include "../hardware/bme280.h"
 
 int main(){
     srand(time(NULL));
     SystemState system;
     initialize_system(&system);
+
+    if (bme280_connect() == 0) {
+        test_raw_read();
+    }
+
     while (1)
     {
         simulate_sensor_readings(&system);
