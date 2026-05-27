@@ -25,6 +25,9 @@ static Bme280Connection bme = {
     .i2c_addr = 0,
 };
 
+static BME280_CalibData calib;
+static int t_fine;
+
 static int select_slave(uint8_t addr)
 {
     if (ioctl(bme.fd, I2C_SLAVE, addr) < 0) {
@@ -119,19 +122,26 @@ int bme280_connect(void)
     return -1;
 }
 
-void bme280_disconnect(void)
-{
-    if (bme.fd >= 0) {
-        close(bme.fd);
-    }
-    bme.fd = -1;
-    bme.connected = 0;
-    bme.i2c_addr = 0;
-}
-
 int bme280_is_connected(void)
 {
     return bme.connected;
+}
+
+int bme280_write_register(unsigned char reg, unsigned char value)
+{
+    unsigned char buf[2];
+
+    if (!bme.connected || bme.fd < 0) {
+        return -1;
+    }
+
+    buf[0] = reg;
+    buf[1] = value;
+    if (write(bme.fd, buf, 2) != 2) {
+        fprintf(stderr, "bme280: write reg 0x%02X failed: %s\n", reg, strerror(errno));
+        return -1;
+    }
+    return 0;
 }
 
 int bme280_read_register(uint8_t reg, uint8_t *value)
@@ -161,6 +171,134 @@ int bme280_read_bytes(unsigned char reg, unsigned char *buf, int len)
     return 0;
 }
 
+int bme280_read_calibration(void)
+{
+    unsigned char data[32];
+
+    if (bme280_read_bytes(0x88, data, 6) != 0) {
+        fprintf(stderr, "bme280: failed to read temperature calibration\n");
+        return -1;
+    }
+
+    calib.dig_T1 = (data[1] << 8) | data[0];
+    calib.dig_T2 = (data[3] << 8) | data[2];
+    calib.dig_T3 = (data[5] << 8) | data[4];
+
+    if (bme280_read_register(0xA1, &data[0]) != 0) {
+        fprintf(stderr, "bme280: failed to read humidity calibration (H1)\n");
+        return -1;
+    }
+    calib.dig_H1 = data[0];
+
+    if (bme280_read_bytes(0xE1, data, 7) != 0) {
+        fprintf(stderr, "bme280: failed to read humidity calibration (H2-H6)\n");
+        return -1;
+    }
+
+    calib.dig_H2 = (data[1] << 8) | data[0];
+    calib.dig_H3 = data[2];
+
+    calib.dig_H4 =
+        (data[3] << 4) |
+        (data[4] & 0x0F);
+
+    calib.dig_H5 =
+        (data[5] << 4) |
+        (data[4] >> 4);
+
+    calib.dig_H6 = (signed char)data[6];
+
+    printf("bme280: calibration loaded\n");
+    return 0;
+}
+
+int bme280_init(void)
+{
+    if (bme280_connect() != 0) {
+        return -1;
+    }
+
+    if (bme280_read_calibration() != 0) {
+        return -1;
+    }
+
+    return 0;
+}
+
+float bme280_compensate_temperature(int adc_T)
+{
+    float var1, var2, T;
+
+    var1 =
+        ((((adc_T >> 3) -
+        ((int)calib.dig_T1 << 1))) *
+        ((int)calib.dig_T2)) >> 11;
+
+    var2 =
+        (((((adc_T >> 4) -
+        ((int)calib.dig_T1)) *
+        ((adc_T >> 4) -
+        ((int)calib.dig_T1))) >> 12) *
+        ((int)calib.dig_T3)) >> 14;
+
+    t_fine = var1 + var2;
+
+    T = (t_fine * 5 + 128) >> 8;
+
+    return T / 100.0f;
+}
+
+float bme280_compensate_humidity(int adc_H)
+{
+    float h;
+
+    h = t_fine - 76800.0f;
+
+    h = (adc_H -
+        (calib.dig_H4 * 64.0f +
+        calib.dig_H5 / 16384.0f * h)) *
+        (calib.dig_H2 / 65536.0f *
+        (1.0f +
+        calib.dig_H6 / 67108864.0f * h *
+        (1.0f +
+        calib.dig_H3 / 67108864.0f * h)));
+
+    h = h * (1.0f -
+        calib.dig_H1 * h / 524288.0f);
+
+    if (h > 100.0f)
+        h = 100.0f;
+
+    if (h < 0.0f)
+        h = 0.0f;
+
+    return h;
+}
+
+void bme280_read_environment(float *temperature, float *humidity)
+{
+    unsigned char data[8];
+
+    if (temperature == NULL || humidity == NULL) {
+        return;
+    }
+
+    if (bme280_read_bytes(0xF7, data, 8) != 0) {
+        return;
+    }
+
+    int raw_temp =
+        (data[3] << 12) |
+        (data[4] << 4) |
+        (data[5] >> 4);
+
+    int raw_hum =
+        (data[6] << 8) |
+        data[7];
+
+    *temperature = bme280_compensate_temperature(raw_temp);
+    *humidity = bme280_compensate_humidity(raw_hum);
+}
 void test_raw_read(void)
 {
     unsigned char data[8];
@@ -190,19 +328,28 @@ void test_raw_read(void)
 
 #else /* !__linux__ */
 
+int bme280_init(void)
+{
+    fprintf(stderr, "bme280: I2C is only supported on Linux (e.g. Raspberry Pi)\n");
+    return -1;
+}
+
 int bme280_connect(void)
 {
     fprintf(stderr, "bme280: I2C is only supported on Linux (e.g. Raspberry Pi)\n");
     return -1;
 }
 
-void bme280_disconnect(void)
-{
-}
-
 int bme280_is_connected(void)
 {
     return 0;
+}
+
+int bme280_write_register(unsigned char reg, unsigned char value)
+{
+    (void)reg;
+    (void)value;
+    return -1;
 }
 
 int bme280_read_register(uint8_t reg, uint8_t *value)
@@ -218,6 +365,33 @@ int bme280_read_bytes(unsigned char reg, unsigned char *buf, int len)
     (void)buf;
     (void)len;
     return -1;
+}
+
+int bme280_read_calibration(void)
+{
+    return -1;
+}
+
+float bme280_compensate_temperature(int adc_T)
+{
+    (void)adc_T;
+    return 0.0f;
+}
+
+float bme280_compensate_humidity(int adc_H)
+{
+    (void)adc_H;
+    return 0.0f;
+}
+
+void bme280_read_environment(float *temperature, float *humidity)
+{
+    if (temperature != NULL) {
+        *temperature = 0.0f;
+    }
+    if (humidity != NULL) {
+        *humidity = 0.0f;
+    }
 }
 
 void test_raw_read(void)

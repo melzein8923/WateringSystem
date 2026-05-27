@@ -15,13 +15,20 @@ int main(){
     SystemState system;
     initialize_system(&system);
 
-    if (bme280_connect() == 0) {
-        test_raw_read();
-    }
+    int bme280_ok = (bme280_init() == 0);
 
     while (1)
     {
         simulate_sensor_readings(&system);
+
+        if (bme280_ok && bme280_is_connected()) {
+            float temperature = 0.0f;
+            float humidity = 0.0f;
+            bme280_read_environment(&temperature, &humidity);
+            system.environment.tempC = temperature;
+            system.environment.humidityPercent = humidity;
+        }
+
         evaluate_irrigation(&system);
         display_system_status(&system);
         sleep(LOOP_DELAY_SEC);

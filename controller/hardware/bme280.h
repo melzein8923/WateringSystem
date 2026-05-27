@@ -16,23 +16,38 @@
 #define BME280_PRESS_MSB 0xF7
 #define BME280_HUM_MSB   0xFD
 
+
+typedef struct
+{
+    unsigned short dig_T1;
+    short dig_T2;
+    short dig_T3;
+
+    unsigned short dig_H1;
+    short dig_H2;
+    unsigned char dig_H3;
+    short dig_H4;
+    short dig_H5;
+    signed char dig_H6;
+} BME280_CalibData;
+
+int bme280_init(void);
 /* Open I2C bus, select BME280 slave, verify chip ID. Returns 0 on success. */
 int bme280_connect(void);
-
-void bme280_disconnect(void);
-
 int bme280_is_connected(void);
 
 int bme280_write_register(unsigned char reg, unsigned char value);
-
 /*
  * Single-byte register read over I2C. Requires an active connection.
  * Returns 0 on success, -1 on error.
  */
 int bme280_read_register(uint8_t reg, uint8_t *value);
-
 int bme280_read_bytes(unsigned char reg, unsigned char *buf, int len);
 
-void test_raw_read(void);
+int bme280_read_calibration(void);
+float bme280_compensate_temperature(int adc_T);
+float bme280_compensate_humidity(int adc_H);
+void bme280_read_environment(float *temperature,float *humidity);
 
+void test_raw_read(void);
 #endif
