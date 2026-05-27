@@ -174,7 +174,7 @@ void test_raw_read(void)
         (data[1] << 4)  |
         (data[2] >> 4);
 
-    int raw_temp =s
+    int raw_temp =
         (data[3] << 12) |
         (data[4] << 4)  |
         (data[5] >> 4);
