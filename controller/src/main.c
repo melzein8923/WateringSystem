@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
@@ -20,32 +19,6 @@ int main(void)
 
     int bme280_ok = (bme280_init() == 0);
 
-    Ads1115 ads = {
-        .i2cAddress = ADS1115_ADDR,
-        .fd = -1,
-        .connected = 0,
-        .activeSensors = 1,
-    };
-
-    int ads_ok = (ads1115_init(&ads) == 0);
-    if (!ads_ok) {
-        fprintf(stderr, "ADS1115 init failed\n");
-        return 1;
-    }
-
-    while (1) {
-        int16_t raw = 0;
-
-        if (ads1115_read_channel(&ads, 0, &raw) == 0) {
-            printf("A0 responding, raw=%d\n", raw);
-        } else {
-            printf("A0 read failed\n");
-        }
-
-        sleep(1);
-    }
-
-    /*
     while (1) {
         simulate_sensor_readings(&system);
 
@@ -57,9 +30,6 @@ int main(void)
         display_system_status(&system);
         sleep(LOOP_DELAY_SEC);
     }
-    */
 
-    (void)bme280_ok;
-    (void)system;
     return 0;
 }
