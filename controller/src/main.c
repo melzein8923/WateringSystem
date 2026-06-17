@@ -12,28 +12,41 @@
 #include "../hardware/bme280.h"
 #include "../hardware/ads1115.h"
 
-int main(){
+int main(void)
+{
     srand(time(NULL));
     SystemState system;
     initialize_system(&system);
 
     int bme280_ok = (bme280_init() == 0);
-    if (ads1115_init() != 0)
-    {
-        printf("ADS1115 init failed\n");
+
+    Ads1115 ads = {
+        .i2cAddress = ADS1115_ADDR,
+        .fd = -1,
+        .connected = 0,
+        .activeSensors = 1,
+    };
+
+    int ads_ok = (ads1115_init(&ads) == 0);
+    if (!ads_ok) {
+        fprintf(stderr, "ADS1115 init failed\n");
         return 1;
     }
 
-    while (1)
-    {
-        int value = ads1115_read_channel(0);
+    while (1) {
+        int16_t raw = 0;
 
-        printf("A0: %d\n", value);
+        if (ads1115_read_channel(&ads, 0, &raw) == 0) {
+            printf("A0 responding, raw=%d\n", raw);
+        } else {
+            printf("A0 read failed\n");
+        }
 
         sleep(1);
     }
 
-    while (1){
+    /*
+    while (1) {
         simulate_sensor_readings(&system);
 
         if (bme280_ok) {
@@ -44,5 +57,9 @@ int main(){
         display_system_status(&system);
         sleep(LOOP_DELAY_SEC);
     }
+    */
+
+    (void)bme280_ok;
+    (void)system;
     return 0;
 }
