@@ -18,12 +18,22 @@ int main(){
     initialize_system(&system);
 
     int bme280_ok = (bme280_init() == 0);
-    int value = ads1115_read_channel(0);
-
-        printf("A0: %d\n", value);
+    if (ads1115_init() != 0)
+    {
+        printf("ADS1115 init failed\n");
+        return 1;
+    }
 
     while (1)
     {
+        int value = ads1115_read_channel(0);
+
+        printf("A0: %d\n", value);
+
+        sleep(1);
+    }
+
+    while (1){
         simulate_sensor_readings(&system);
 
         if (bme280_ok) {
