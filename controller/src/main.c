@@ -10,6 +10,7 @@
 #include "../include/irrigation.h"
 #include "../include/config.h"
 #include "../hardware/bme280.h"
+#include "../hardware/ads1115.h"
 
 int main(){
     srand(time(NULL));
@@ -17,6 +18,9 @@ int main(){
     initialize_system(&system);
 
     int bme280_ok = (bme280_init() == 0);
+    int value = ads1115_read_channel(0);
+
+        printf("A0: %d\n", value);
 
     while (1)
     {

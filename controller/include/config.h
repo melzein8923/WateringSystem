@@ -10,6 +10,6 @@
 #define SENSOR_STUCK_EPSILON 0.01f
 #define SENSOR_FAULT_CLEAR_COUNT 3
 
-
+#define MAX_ADS1115_BOARDS 2
 
 #endif

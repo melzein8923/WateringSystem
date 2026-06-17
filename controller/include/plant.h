@@ -1,8 +1,11 @@
 #ifndef PLANT_H
 #define PLANT_H
 
+#include "../hardware/moisture_sensor.h"
+
 typedef struct {
 	int id;
+	MoistureSensor moistureSensor;
 	float moisturePercent;
 	int sensorFault;
 	int needsWater;
