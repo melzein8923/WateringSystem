@@ -4,7 +4,8 @@
 
 #include "../include/system_state.h"
 #include "../include/system_init.h"
-#include "../include/sensor_sim.h"
+#include "../include/plant.h"
+#include "../include/plant_update.h"
 #include "../include/display.h"
 #include "../include/irrigation.h"
 #include "../include/config.h"
@@ -19,8 +20,19 @@ int main(void)
 
     int bme280_ok = (bme280_init() == 0);
 
+    Ads1115 boards[MAX_ADS1115_BOARDS] = {
+        {
+            .i2cAddress = ADS1115_ADDR,
+            .fd = -1,
+            .connected = 0,
+            .activeSensors = 4,
+        },
+    };
+
+    ads1115_init(&boards[0]);
+
     while (1) {
-        simulate_sensor_readings(&system);
+        updateAllPlants(&system, boards);
 
         if (bme280_ok) {
             bme280_update_environment(&system.environment);

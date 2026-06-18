@@ -11,6 +11,10 @@ void initialize_system(SystemState* system){
         system->plants[i].id = i + 1;
         system->plants[i].moistureSensor.adsIndex = 0;
         system->plants[i].moistureSensor.channel = (uint8_t)i;
+        system->plants[i].moistureSensor.dryValue = 28000;
+        system->plants[i].moistureSensor.wetValue = 12000;
+        system->plants[i].moistureSensor.rawValue = 0;
+        system->plants[i].moistureSensor.sensorFault = 0;
         system->plants[i].moisturePercent = 50.0f;
         system->plants[i].needsWater = 0;
         system->plants[i].sensorFault = 0;

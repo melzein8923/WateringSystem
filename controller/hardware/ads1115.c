@@ -4,6 +4,12 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "../include/config.h"
+
+#if SIMULATE_ADS1115
+#include "simulate_ads1115.h"
+#endif
+
 #if defined(__linux__)
 
 #include <fcntl.h>
@@ -41,12 +47,20 @@ int ads1115_read_register(Ads1115 *board, uint8_t reg, uint16_t *value)
 
 int ads1115_init(Ads1115 *board)
 {
-    uint16_t config = 0;
-    uint8_t addr;
-
     if (board == NULL) {
         return -1;
     }
+
+#if SIMULATE_ADS1115
+    board->connected = 1;
+    board->fd = -1;
+    if (board->i2cAddress == 0) {
+        board->i2cAddress = ADS1115_ADDR;
+    }
+    return 0;
+#else
+    uint16_t config = 0;
+    uint8_t addr;
 
     board->connected = 0;
     board->fd = -1;
@@ -84,6 +98,7 @@ int ads1115_init(Ads1115 *board)
     board->connected = 1;
     printf("ads1115: connected at I2C 0x%02X (config 0x%04X)\n", addr, config);
     return 0;
+#endif
 }
 
 int ads1115_write_register(Ads1115 *board, uint8_t reg, uint16_t value)
@@ -106,10 +121,18 @@ int ads1115_write_register(Ads1115 *board, uint8_t reg, uint16_t value)
 
 int ads1115_read_channel(Ads1115 *board, uint8_t channel, int16_t *raw)
 {
+    if (board == NULL || raw == NULL || channel >= ADS1115_MAX_CHANNELS) {
+        return -1;
+    }
+
+#if SIMULATE_ADS1115
+    (void)board;
+    return simulate_ads1115_read_channel(channel, raw);
+#else
     uint16_t config = 0;
     uint16_t reading = 0;
 
-    if (board == NULL || !board->connected || raw == NULL || channel >= ADS1115_MAX_CHANNELS) {
+    if (!board->connected) {
         return -1;
     }
 
@@ -139,28 +162,50 @@ int ads1115_read_channel(Ads1115 *board, uint8_t channel, int16_t *raw)
 
     *raw = (int16_t)reading;
     return 0;
+#endif
 }
 
 #else /* !__linux__ */
 
 int ads1115_init(Ads1115 *board)
 {
+    if (board == NULL) {
+        return -1;
+    }
+
+#if SIMULATE_ADS1115
+    board->connected = 1;
+    board->fd = -1;
+    if (board->i2cAddress == 0) {
+        board->i2cAddress = ADS1115_ADDR;
+    }
+    return 0;
+#else
     if (board != NULL) {
         board->connected = 0;
         board->fd = -1;
     }
     fprintf(stderr, "ads1115: I2C is only supported on Linux (e.g. Raspberry Pi)\n");
     return -1;
+#endif
 }
 
 int ads1115_read_channel(Ads1115 *board, uint8_t channel, int16_t *raw)
 {
+#if SIMULATE_ADS1115
+    if (raw == NULL || channel >= ADS1115_MAX_CHANNELS) {
+        return -1;
+    }
+    (void)board;
+    return simulate_ads1115_read_channel(channel, raw);
+#else
     (void)board;
     (void)channel;
     if (raw != NULL) {
         *raw = 0;
     }
     return -1;
+#endif
 }
 
 int ads1115_write_register(Ads1115 *board, uint8_t reg, uint16_t value)
