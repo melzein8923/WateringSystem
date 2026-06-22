@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
@@ -12,24 +13,30 @@
 #include "../hardware/bme280.h"
 #include "../hardware/ads1115.h"
 
-int main(void)
+int main(int argc, char *argv[])
 {
+    int numPlants = 4;
+
+    if (argc >= 2) {
+        numPlants = atoi(argv[1]);
+    }
+
+    if (numPlants < 1 || numPlants > MAX_PLANTS) {
+        fprintf(stderr, "Usage: %s [num_plants (1-%d)]\n", argv[0], MAX_PLANTS);
+        return 1;
+    }
+
     srand(time(NULL));
     SystemState system;
-    initialize_system(&system);
+    initialize_system(&system, numPlants);
 
     int bme280_ok = (bme280_init() == 0);
 
-    Ads1115 boards[MAX_ADS1115_BOARDS] = {
-        {
-            .i2cAddress = ADS1115_ADDR,
-            .fd = -1,
-            .connected = 0,
-            .activeSensors = 4,
-        },
-    };
-
-    ads1115_init(&boards[0]);
+    Ads1115 boards[MAX_ADS1115_BOARDS];
+    if (initialize_ads1115_boards(boards, numPlants) < 0) {
+        fprintf(stderr, "Failed to initialize ADS1115 boards for %d plants\n", numPlants);
+        return 1;
+    }
 
     while (1) {
         updateAllPlants(&system, boards);
