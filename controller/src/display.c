@@ -2,6 +2,7 @@
 
 #include "../include/display.h"
 #include "../include/system_state.h"
+#include "../hardware/bme280.h"
 
 void display_system_status(SystemState* system)
 {
@@ -42,14 +43,15 @@ void display_system_status(SystemState* system)
 
     printf("\nEnvironment:\n");
 
-    printf("Temperature: %.1f C\n",
-           system->environment.tempC);
-
-    printf("Humidity: %.1f%%\n",
-           system->environment.humidityPercent);
-
-    printf("Pressure: %.1f hPa\n",
-           system->environment.pressurehpa);
+    if (bme280_is_connected()) {
+        printf("Temperature: %.1f C\n", system->environment.tempC);
+        printf("Humidity: %.1f%%\n", system->environment.humidityPercent);
+        printf("Pressure: %.1f hPa\n", system->environment.pressurehpa);
+    } else {
+        printf("Temperature: N/A\n");
+        printf("Humidity: N/A\n");
+        printf("Pressure: N/A\n");
+    }
 
     printf("====================\n");
 }
