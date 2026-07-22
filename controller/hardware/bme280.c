@@ -28,6 +28,21 @@ static Bme280Connection bme = {
 static BME280_CalibData calib;
 static int t_fine;
 
+static void bme280_mark_disconnected(void)
+{
+    if (!bme.connected) {
+        return;
+    }
+
+    fprintf(stderr, "bme280: disconnected\n");
+    bme.connected = 0;
+    if (bme.fd >= 0) {
+        close(bme.fd);
+        bme.fd = -1;
+    }
+    bme.i2c_addr = 0;
+}
+
 static int select_slave(uint8_t addr)
 {
     if (ioctl(bme.fd, I2C_SLAVE, addr) < 0) {
@@ -46,11 +61,13 @@ static int bus_read_register(uint8_t reg, uint8_t *value)
 
     if (write(bme.fd, &reg, 1) != 1) {
         fprintf(stderr, "bme280: write reg 0x%02X failed: %s\n", reg, strerror(errno));
+        bme280_mark_disconnected();
         return -1;
     }
 
     if (read(bme.fd, value, 1) != 1) {
         fprintf(stderr, "bme280: read reg 0x%02X failed: %s\n", reg, strerror(errno));
+        bme280_mark_disconnected();
         return -1;
     }
 
@@ -139,6 +156,7 @@ int bme280_write_register(unsigned char reg, unsigned char value)
     buf[1] = value;
     if (write(bme.fd, buf, 2) != 2) {
         fprintf(stderr, "bme280: write reg 0x%02X failed: %s\n", reg, strerror(errno));
+        bme280_mark_disconnected();
         return -1;
     }
     return 0;
@@ -160,11 +178,13 @@ int bme280_read_bytes(unsigned char reg, unsigned char *buf, int len)
 
     if (write(bme.fd, &reg, 1) != 1) {
         fprintf(stderr, "bme280: write reg 0x%02X failed: %s\n", reg, strerror(errno));
+        bme280_mark_disconnected();
         return -1;
     }
 
     if (read(bme.fd, buf, (size_t)len) != len) {
         fprintf(stderr, "bme280: read %d bytes from 0x%02X failed: %s\n", len, reg, strerror(errno));
+        bme280_mark_disconnected();
         return -1;
     }
 
@@ -264,6 +284,7 @@ static int bme280_trigger_measurement(void)
     }
 
     fprintf(stderr, "bme280: measurement timed out\n");
+    bme280_mark_disconnected();
     return -1;
 }
 

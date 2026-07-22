@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
     SystemState system;
     initialize_system(&system, numPlants);
 
-    int bme280_ok = (bme280_init() == 0);
+    bme280_init();
 
     Ads1115 boards[MAX_ADS1115_BOARDS];
     if (initialize_ads1115_boards(boards, numPlants) < 0) {
@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
     while (1) {
         updateAllPlants(&system, boards);
 
-        if (bme280_ok) {
+        if (bme280_is_connected()) {
             bme280_update_environment(&system.environment);
         }
 

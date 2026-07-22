@@ -12,6 +12,4 @@
 
 #define MAX_ADS1115_BOARDS 4
 
-#define SIMULATE_ADS1115 0
-
 #endif
