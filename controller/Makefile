@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -Iinclude -Ihardware -lm
+CFLAGS = -Wall -Wextra -Iinclude -Ihardware -lm -lgpiod
 SRC = $(wildcard src/*.c) $(wildcard hardware/*.c)
 TARGET = irrigation_controller
 
