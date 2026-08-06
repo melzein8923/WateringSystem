@@ -1,7 +1,6 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#define MAX_PLANTS 16
 #define WATERING_THRESHOLD 35.0f
 #define PUMP_DURATION_SEC 6
 #define PUMP_COOLDOWN_SEC 60

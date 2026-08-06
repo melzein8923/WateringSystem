@@ -106,6 +106,9 @@ int ads1115_write_register(Ads1115 *board, uint8_t reg, uint16_t value)
 
 int ads1115_read_channel(Ads1115 *board, uint8_t channel, int16_t *raw)
 {
+    uint16_t config = 0;
+    uint16_t reading = 0;
+
     if (board == NULL || raw == NULL || channel >= ADS1115_MAX_CHANNELS) {
         return -1;
     }
