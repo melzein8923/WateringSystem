@@ -10,6 +10,12 @@
 #define SENSOR_STUCK_EPSILON 0.01f
 #define SENSOR_FAULT_CLEAR_COUNT 3
 
+// ADS1115 settings
 #define MAX_ADS1115_BOARDS 4
+#define MAX_PLANTS 16
+
+// GPIO pins for pump
+#define GPIO_CHIP "/dev/gpiochip0"
+#define PUMP_GPIO 17
 
 #endif
