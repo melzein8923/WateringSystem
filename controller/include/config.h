@@ -5,9 +5,8 @@
 #define PUMP_DURATION_SEC 6
 #define PUMP_COOLDOWN_SEC 60
 #define LOOP_DELAY_SEC 2
-#define SENSOR_STUCK_COUNT 5
-#define SENSOR_STUCK_EPSILON 0.01f
-#define SENSOR_FAULT_CLEAR_COUNT 3
+#define SENSOR_MAX_STUCK_COUNT 5   // Number of consecutive stuck readings before declaring a fault
+#define SENSOR_FAULT_CLEAR_COUNT 3 // Number of valid readings required to clear a fault
 
 // ADS1115 settings
 #define MAX_ADS1115_BOARDS 4

@@ -23,8 +23,7 @@ void initialize_system(SystemState* system, int numPlants)
         system->plants[i].moisturePercent = 50.0f;
         system->plants[i].needsWater = 0;
         system->plants[i].sensorFault = 0;
-        system->plants[i].lastReading = 50.0f;
-        system->plants[i].stuckStreak = 0;
+        system->plants[i].maxStreak = 0;
         system->plants[i].goodStreak = 0;
     }
 }

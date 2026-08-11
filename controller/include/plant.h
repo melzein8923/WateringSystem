@@ -9,8 +9,7 @@ typedef struct {
 	float moisturePercent;
 	int sensorFault;
 	int needsWater;
-	float lastReading;
-	int stuckStreak;
+	int maxStreak;
 	int goodStreak;
 } Plant;
 

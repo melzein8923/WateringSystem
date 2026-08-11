@@ -6,19 +6,26 @@
 void evaluate_irrigation(SystemState* system)
 {
     int anyDry = 0;
+    int allFaulted = system->activePlants > 0;
 
     for (int i = 0; i < system->activePlants; i++) {
-        if (isPlantDry(&system->plants[i])) {
-            system->plants[i].needsWater = 1;
+        Plant* plant = &system->plants[i];
+
+        if (isPlantDry(plant)) {
+            plant->needsWater = 1;
             anyDry = 1;
         } else {
-            system->plants[i].needsWater = 0;
+            plant->needsWater = 0;
+        }
+
+        if (!plant->sensorFault) {
+            allFaulted = 0;
         }
     }
 
     if (system->pumpSecondsRemaining > 0) {
         system->pumpActive = 1;
-        system->mode = STATE_WATERING;
+        system->mode = allFaulted ? STATE_FAULT : STATE_WATERING;
         system->pumpSecondsRemaining -= LOOP_DELAY_SEC;
         if (system->pumpSecondsRemaining < 0) {
             system->pumpSecondsRemaining = 0;
@@ -26,14 +33,14 @@ void evaluate_irrigation(SystemState* system)
         if (system->pumpSecondsRemaining == 0) {
             system->pumpActive = 0;
             system->cooldownSecondsRemaining = PUMP_COOLDOWN_SEC;
-            system->mode = STATE_COOLDOWN;
+            system->mode = allFaulted ? STATE_FAULT : STATE_COOLDOWN;
         }
         return;
     }
 
     if (system->cooldownSecondsRemaining > 0) {
         system->pumpActive = 0;
-        system->mode = STATE_COOLDOWN;
+        system->mode = allFaulted ? STATE_FAULT : STATE_COOLDOWN;
         system->cooldownSecondsRemaining -= LOOP_DELAY_SEC;
         if (system->cooldownSecondsRemaining < 0) {
             system->cooldownSecondsRemaining = 0;
@@ -42,7 +49,7 @@ void evaluate_irrigation(SystemState* system)
     }
 
     system->pumpActive = 0;
-    system->mode = STATE_MONITORING;
+    system->mode = allFaulted ? STATE_FAULT : STATE_MONITORING;
 
     if (anyDry) {
         system->pumpActive = 1;
