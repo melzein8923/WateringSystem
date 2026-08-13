@@ -11,6 +11,8 @@ void display_system_status(SystemState* system)
     const char* modeLabel = "MONITORING";
     if (system->mode == STATE_WATERING) {
         modeLabel = "WATERING";
+    } else if (system->mode == STATE_SOAKING) {
+        modeLabel = "SOAKING";
     } else if (system->mode == STATE_COOLDOWN) {
         modeLabel = "COOLDOWN";
     } else if (system->mode == STATE_FAULT) {

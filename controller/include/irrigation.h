@@ -3,6 +3,6 @@
 
 #include "system_state.h"
 
-void evaluate_irrigation(SystemState* system);
+void evaluate_irrigation(SystemState* system, int* elapsedTime);
 
 #endif

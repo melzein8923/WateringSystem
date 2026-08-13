@@ -2,7 +2,15 @@
 #define CONFIG_H
 
 #define WATERING_THRESHOLD 35.0f
-#define PUMP_DURATION_SEC 6
+
+//(watering time) = (PUMP_DURATION_MS_PER_PLANT)numPlants + (PUMP_DURATION_MS_BASE)
+#define PUMP_DURATION_MS_PER_PLANT 500
+#define PUMP_DURATION_MS_BASE 4000
+
+
+#define SOAK_COUNT 3
+#define SOAK_DURATION_SEC 45
+
 #define PUMP_COOLDOWN_SEC 60
 #define LOOP_DELAY_SEC 2
 #define SENSOR_MAX_STUCK_COUNT 5   // Number of consecutive stuck readings before declaring a fault

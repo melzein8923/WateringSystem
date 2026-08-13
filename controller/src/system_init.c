@@ -8,8 +8,8 @@ void initialize_system(SystemState* system, int numPlants)
 {
     system->activePlants = numPlants;
     system->pumpActive = 0;
-    system->pumpSecondsRemaining = 0;
-    system->cooldownSecondsRemaining = 0;
+    system->soaksRemaining = 0;
+    system->cooldownActive = 0;
     system->mode = STATE_MONITORING;
     for (int i = 0; i < system->activePlants; i++)
     {
