@@ -17,9 +17,10 @@ bool pumpInit(void)
     if (initialized) return true;
 
     // Open the GPIO chip
-    chip = gpiod_chip_open_by_name(GPIO_CHIP);
+    chip = gpiod_chip_open(GPIO_CHIP);
     if (chip == NULL) {
         fprintf(stderr, "Failed to open GPIO chip\n");
+        perror("Failed to open GPIO chip");
         return false;
     }
     // Get the GPIO line
@@ -50,7 +51,10 @@ void pumpOn(void)
     if(!initialized){
         return;
     }
-    gpiod_line_set_value(line, 1);
+    if (gpiod_line_set_value(line, 1) < 0) {
+        perror("Failed to turn pump on");
+        return;
+    }
     running = true;
 }
 
@@ -59,7 +63,10 @@ void pumpOff(void)
     if(!initialized){
         return;
     }
-    gpiod_line_set_value(line, 0);
+    if (gpiod_line_set_value(line, 0) < 0) {
+        perror("Failed to turn pump off");
+        return;
+    }
     running = false;
 }
 

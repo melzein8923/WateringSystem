@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
         }
     }
     pumpOn();
-    printf("Pump on");
+    printf("Pump on\n");
     sleep(3);
 
     pumpOff();
