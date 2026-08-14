@@ -122,7 +122,8 @@ int main(int argc, char *argv[])
         }
     }
     pumpOn();
-    sleep(1);
+    System.out.println("Pump on");
+    sleep(3);
 
     pumpOff();
     pumpCleanup();
