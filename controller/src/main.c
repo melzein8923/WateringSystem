@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
         }
     }
     pumpOn();
-    System.out.println("Pump on");
+    printf("Pump on");
     sleep(3);
 
     pumpOff();
